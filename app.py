@@ -7,7 +7,16 @@ from datetime import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/novels.db'
+
+# Database configuration for Vercel vs local
+if os.environ.get('VERCEL'):
+    # Vercel environment - use /tmp for SQLite
+    db_path = '/tmp/novels.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+else:
+    # Local development
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/novels.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -286,8 +295,19 @@ def init_sample_data():
         db.session.commit()
         print("Sample data initialized!")
 
-if __name__ == '__main__':
+# Vercel serverless function handler
+def handler(environ, start_response):
+    return app(environ, start_response)
+
+# Initialize database for both local and Vercel
+def init_db():
     with app.app_context():
         db.create_all()
         init_sample_data()
+
+if __name__ == '__main__':
+    init_db()
     app.run(debug=True)
+else:
+    # For Vercel deployment
+    init_db()
