@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}{{ novel.title }} - Novel Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="novel-detail">
+        <div class="novel-header">
+            <div class="novel-cover-large">
+                {% if novel.cover_image %}
+                    <img src="{{ novel.cover_image }}" alt="{{ novel.title }}">
+                {% else %}
+                    <div class="cover-placeholder-large">
+                        <span class="cover-icon">📖</span>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="novel-meta">
+                <h1 class="novel-title-large">{{ novel.title }}</h1>
+                <p class="novel-author-large">by {{ novel.author }}</p>
+                
+                <div class="novel-badges">
+                    <span class="badge badge-status">{{ novel.status }}</span>
+                    {% if novel.total_chapters %}
+                        <span class="badge badge-chapters">{{ novel.total_chapters }} Chapters</span>
+                    {% endif %}
+                </div>
+                
+                {% if novel.tags %}
+                <div class="novel-tags-large">
+                    {% for tag in novel.tags.split(',') %}
+                        <span class="tag tag-large">{{ tag.strip() }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if current_user.is_authenticated %}
+                <div class="novel-actions">
+                    {% if user_status %}
+                        <div class="current-status">
+                            <span class="status-label">Current Status:</span>
+                            <span class="status-value">{{ user_status }}</span>
+                            {% if user_rating %}
+                                <div class="current-rating">
+                                    {% for i in range(1, 6) %}
+                                        <span class="star {{ 'filled' if i <= user_rating else 'empty' }}">★</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <button onclick="showUpdateForm()" class="btn btn-outline">Update Status</button>
+                    {% else %}
+                        <button onclick="showAddForm()" class="btn btn-primary">Add to My List</button>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="novel-actions">
+                    <a href="{{ url_for('login') }}" class="btn btn-primary">Sign in to Track</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="novel-content">
+            <div class="synopsis-section">
+                <h2>Synopsis</h2>
+                <div class="synopsis-content">
+                    <p>{{ novel.synopsis }}</p>
+                </div>
+            </div>
+            
+            {% if current_user.is_authenticated and user_review %}
+            <div class="user-review-section">
+                <h2>Your Review</h2>
+                <div class="user-review">
+                    <p>{{ user_review }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if current_user.is_authenticated %}
+    <div id="statusForm" class="status-form-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>{% if user_status %}Update{% else %}Add to{% endif %} Reading List</h3>
+                <button onclick="hideForm()" class="modal-close">&times;</button>
+            </div>
+            
+            <form method="POST" action="{{ url_for('add_to_list', novel_id=novel.id) }}">
+                <div class="form-group">
+                    <label for="status" class="form-label">Reading Status</label>
+                    <select name="status" id="status" class="form-input" required>
+                        <option value="Want to Read" {% if user_status == 'Want to Read' %}selected{% endif %}>Want to Read</option>
+                        <option value="Reading" {% if user_status == 'Reading' %}selected{% endif %}>Reading</option>
+                        <option value="Completed" {% if user_status == 'Completed' %}selected{% endif %}>Completed</option>
+                        <option value="On Hold" {% if user_status == 'On Hold' %}selected{% endif %}>On Hold</option>
+                        <option value="Dropped" {% if user_status == 'Dropped' %}selected{% endif %}>Dropped</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Rating</label>
+                    <div class="rating-input">
+                        {% for i in range(1, 6) %}
+                            <button type="button" class="rating-star" data-rating="{{ i }}" 
+                                    onclick="setRating({{ i }})">
+                                <span class="star {{ 'filled' if user_rating and i <= user_rating else 'empty' }}">★</span>
+                            </button>
+                        {% endfor %}
+                        <input type="hidden" name="rating" id="rating" value="{{ user_rating or '' }}">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="review" class="form-label">Review (Optional)</label>
+                    <textarea name="review" id="review" class="form-textarea" rows="4" 
+                              placeholder="Share your thoughts about this novel...">{{ user_review or '' }}</textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        {% if user_status %}Update{% else %}Add to{% endif %} List
+                    </button>
+                    <button type="button" onclick="hideForm()" class="btn btn-outline">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function showAddForm() {
+    document.getElementById('statusForm').style.display = 'flex';
+}
+
+function showUpdateForm() {
+    document.getElementById('statusForm').style.display = 'flex';
+}
+
+function hideForm() {
+    document.getElementById('statusForm').style.display = 'none';
+}
+
+function setRating(rating) {
+    document.getElementById('rating').value = rating;
+    const stars = document.querySelectorAll('.rating-star .star');
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.classList.add('filled');
+            star.classList.remove('empty');
+        } else {
+            star.classList.add('empty');
+            star.classList.remove('filled');
+        }
+    });
+}
+
+// Close modal when clicking outside
+document.getElementById('statusForm').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideForm();
+    }
+});
+</script>
+{% endblock %}

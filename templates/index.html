@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Novel Tracker - Home{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Track Your Novel Reading Journey</h1>
+            <p class="hero-subtitle">Discover, organize, and keep track of your favorite web novels, light novels, and manhwa</p>
+            <div class="hero-actions">
+                <a href="{{ url_for('search') }}" class="btn btn-primary">Browse Novels</a>
+                {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('register') }}" class="btn btn-outline">Get Started</a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="recent-section">
+        <div class="section-header">
+            <h2 class="section-title">Recent Novels</h2>
+            <a href="{{ url_for('search') }}" class="section-link">View All →</a>
+        </div>
+        
+        <div class="novel-grid">
+            {% for novel in novels %}
+            <div class="novel-card">
+                <div class="novel-cover">
+                    {% if novel.cover_image %}
+                        <img src="{{ novel.cover_image }}" alt="{{ novel.title }}">
+                    {% else %}
+                        <div class="cover-placeholder">
+                            <span class="cover-icon">📖</span>
+                        </div>
+                    {% endif %}
+                    <div class="novel-status">{{ novel.status }}</div>
+                </div>
+                <div class="novel-info">
+                    <h3 class="novel-title">
+                        <a href="{{ url_for('novel_detail', novel_id=novel.id) }}">{{ novel.title }}</a>
+                    </h3>
+                    <p class="novel-author">by {{ novel.author }}</p>
+                    {% if novel.tags %}
+                    <div class="novel-tags">
+                        {% for tag in novel.tags.split(',')[:3] %}
+                            <span class="tag">{{ tag.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if novel.total_chapters %}
+                    <p class="novel-chapters">{{ novel.total_chapters }} chapters</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

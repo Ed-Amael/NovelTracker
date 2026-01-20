@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}My Reading List - Novel Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mylist-header">
+        <h1 class="page-title">My Reading List</h1>
+        <p class="page-subtitle">Track your reading progress</p>
+        
+        <div class="list-filters">
+            <form method="GET" class="filter-form">
+                <select name="status" class="filter-select" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    {% for status in statuses %}
+                        <option value="{{ status }}" {% if current_filter == status %}selected{% endif %}>
+                            {{ status }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+    
+    {% if grouped_lists %}
+        {% for status, items in grouped_lists.items() %}
+        <section class="status-section">
+            <div class="status-header">
+                <h2 class="status-title">{{ status }}</h2>
+                <span class="status-count">{{ items|length }} novel{{ 's' if items|length != 1 else '' }}</span>
+            </div>
+            
+            <div class="novel-grid">
+                {% for item in items %}
+                <div class="novel-card">
+                    <div class="novel-cover">
+                        {% if item.novel.cover_image %}
+                            <img src="{{ item.novel.cover_image }}" alt="{{ item.novel.title }}">
+                        {% else %}
+                            <div class="cover-placeholder">
+                                <span class="cover-icon">📖</span>
+                            </div>
+                        {% endif %}
+                        <div class="novel-status">{{ item.novel.status }}</div>
+                    </div>
+                    <div class="novel-info">
+                        <h3 class="novel-title">
+                            <a href="{{ url_for('novel_detail', novel_id=item.novel.id) }}">{{ item.novel.title }}</a>
+                        </h3>
+                        <p class="novel-author">by {{ item.novel.author }}</p>
+                        
+                        {% if item.rating %}
+                        <div class="novel-rating">
+                            {% for i in range(1, 6) %}
+                                <span class="star {{ 'filled' if i <= item.rating else 'empty' }}">★</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if item.review %}
+                        <p class="novel-review">{{ item.review[:80] }}{% if item.review|length > 80 %}...{% endif %}</p>
+                        {% endif %}
+                        
+                        {% if item.novel.tags %}
+                        <div class="novel-tags">
+                            {% for tag in item.novel.tags.split(',')[:3] %}
+                                <span class="tag">{{ tag.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="novel-actions-small">
+                            <a href="{{ url_for('novel_detail', novel_id=item.novel.id) }}" class="btn-small btn-outline">View</a>
+                            <form method="POST" action="{{ url_for('remove_from_list', novel_id=item.novel.id) }}" 
+                                  onsubmit="return confirm('Remove this novel from your list?')" class="inline-form">
+                                <button type="submit" class="btn-small btn-danger">Remove</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📚</div>
+        <h3>Your reading list is empty</h3>
+        <p>Start tracking novels by adding them to your reading list.</p>
+        <a href="{{ url_for('search') }}" class="btn btn-primary">Browse Novels</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
